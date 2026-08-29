@@ -13,11 +13,9 @@ Expects these files to already exist (produced by the training scripts):
     models/rf_model.joblib
     models/svm_model.joblib
     models/hog_scaler.joblib
-    processed/label_map.json
     results/comparison_report.csv   (optional — shown if present)
 """
 
-import json
 from pathlib import Path
 
 import numpy as np
@@ -33,8 +31,12 @@ from skimage.color import rgb2gray
 # ---------------- Config ----------------
 IMG_SIZE = 128
 MODELS_DIR = Path("models")
-PROCESSED_DIR = Path("processed")
 RESULTS_DIR = Path("results")
+# Class order matches the label indices used during training (see
+# data_preprocessing.py) — hardcoded here rather than read from
+# processed/label_map.json, since processed/ isn't pushed to deployment
+# (it's just cached training arrays, regenerated locally).
+CLASSES = ["glioma", "meningioma", "notumor", "pituitary"]
 # -----------------------------------------
 
 st.set_page_config(
@@ -52,13 +54,6 @@ def load_models():
     svm = joblib.load(MODELS_DIR / "svm_model.joblib")
     scaler = joblib.load(MODELS_DIR / "hog_scaler.joblib")
     return cnn, rf, svm, scaler
-
-
-@st.cache_data
-def load_classes():
-    with open(PROCESSED_DIR / "label_map.json") as f:
-        label_map = json.load(f)
-    return [label_map[str(i)] for i in range(len(label_map))]
 
 
 def preprocess_image(pil_img: Image.Image):
@@ -89,7 +84,7 @@ st.caption(
 
 try:
     cnn_model, rf_model, svm_model, hog_scaler = load_models()
-    classes = load_classes()
+    classes = CLASSES
     models_ready = True
 except Exception as e:
     models_ready = False
