@@ -13,7 +13,6 @@ Expects these files to already exist (produced by the training scripts):
     models/rf_model.joblib
     models/svm_model.joblib
     models/hog_scaler.joblib
-    results/comparison_report.csv   (optional — shown if present)
 """
 
 from pathlib import Path
@@ -31,7 +30,6 @@ from skimage.color import rgb2gray
 # ---------------- Config ----------------
 IMG_SIZE = 128
 MODELS_DIR = Path("models")
-RESULTS_DIR = Path("results")
 # Class order matches the label indices used during training (see
 # data_preprocessing.py) — hardcoded here rather than read from
 # processed/label_map.json, since processed/ isn't pushed to deployment
@@ -153,20 +151,3 @@ if models_ready:
             st.success(f"All three models agree: **{classes[cnn_pred_idx].capitalize()}**")
         else:
             st.warning("The models don't all agree — worth a closer look.")
-
-    st.divider()
-
-    # ---- Model performance section (from the saved comparison report) ----
-    report_path = RESULTS_DIR / "comparison_report.csv"
-    if report_path.exists():
-        st.subheader("Model performance on the test set")
-        report_df = pd.read_csv(report_path)
-        st.dataframe(
-            report_df.set_index("model").style.format("{:.3f}"),
-            use_container_width=True,
-        )
-    else:
-        st.caption(
-            "Run `evaluate_compare.py` or `results_comparison.ipynb` to "
-            "generate a test-set performance comparison here."
-        )
